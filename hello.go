@@ -85,7 +85,7 @@ func encrypt(pk PublicKey, m int64) Ciphertext {
 	return Ciphertext{u, v}
 }
 
-func decrypt(sk SecretKey, ciphertext Ciphertext) int32 {
+func decrypt(sk SecretKey, ciphertext Ciphertext) int {
 	var res int64
 
 	// Compute (v - s*u) mod Q
@@ -99,6 +99,36 @@ func decrypt(sk SecretKey, ciphertext Ciphertext) int32 {
 	} else {
 		return 1
 	}
+}
+
+func stringToBits(s string) []int {
+	bits := make([]int, 0)
+
+	for _, c := range s {
+		for i := 7; i >= 0; i-- {
+			bits = append(bits, int(c)>>i&1)
+		}
+	}
+
+	return bits
+}
+
+func bitsToString(bits []int) string {
+	n := len(bits)
+	if n%8 != 0 {
+		panic("bits length must be a multiple of 8")
+	}
+
+	runes := make([]rune, 0)
+	for i := 0; i < len(bits); i += 8 {
+		var val rune
+		for j := 0; j < 8; j++ {
+			val = val<<1 | rune(bits[i+j])
+		}
+		runes = append(runes, val)
+	}
+
+	return string(runes)
 }
 
 func main() {
@@ -120,4 +150,23 @@ func main() {
 	//fmt.Println(cipher)
 	plain = decrypt(sk, cipher)
 	fmt.Println(plain)
+
+	s := "Hello"
+	bits := stringToBits(s)
+	// fmt.Println(bits)
+	// s = bitsToString(bits)
+	// fmt.Println(s)
+	ciphertexts := make([]Ciphertext, len(bits))
+	plaintexts := make([]int, len(bits))
+
+	for i, bit := range bits {
+		ciphertexts[i] = encrypt(pk, int64(bit))
+	}
+
+	for i, ct := range ciphertexts {
+		plaintexts[i] = decrypt(sk, ct)
+	}
+
+	s = bitsToString(plaintexts)
+	fmt.Println(s)
 }
